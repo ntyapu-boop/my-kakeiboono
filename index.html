@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>家計簿 Pro+ Local</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --warning: #ffc107; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding-bottom: 100px; color: #333; -webkit-tap-highlight-color: transparent; }
+        .page { display: none; padding: 15px; min-height: 100vh; box-sizing: border-box; }
+        .page.active { display: block !important; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 75px; z-index: 10000; }
+        .nav-item { flex: 1; text-align: center; padding-top: 15px; font-size: 10px; color: #888; }
+        .nav-item.active { color: var(--main); font-weight: bold; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ccc; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
+        .day { background: white; min-height: 85px; padding: 4px; box-sizing: border-box; font-size: 10px; cursor: pointer; }
+        .day-sum { display: block; text-align: center; margin-top: 5px; font-weight: bold; font-size: 11px; }
+        .summary-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .btn-main { width: 100%; padding: 15px; background: var(--main); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+        .detail-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-sm { padding: 6px 10px; border-radius: 4px; border: none; font-size: 11px; font-weight: bold; }
+        .chart-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 12px; }
+        .chart-bar-bg { flex: 1; background: #eee; height: 14px; border-radius: 7px; margin: 0 10px; overflow: hidden; }
+        .chart-bar-fill { background: var(--main); height: 100%; border-radius: 7px; }
+    </style>
+</head>
+<body>
+
+<div id="page-home" class="page active">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <button onclick="changeMonth(-1)" style="padding:10px; border:none; background:none; font-size:20px;">◀</button>
+        <h2 id="month-title" style="margin:0;"></h2>
+        <button onclick="changeMonth(1)" style="padding:10px; border:none; background:none; font-size:20px;">▶</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+    <div id="day-details" style="margin-top:20px;"><div id="details-list"></div></div>
+</div>
+
+<div id="page-report" class="page">
+    <h2>月次レポート</h2>
+    <div class="summary-box">
+        <h3 id="report-month-title" style="margin-top:0;"></h3>
+        <div id="report-summary"></div>
+        <div id="card-summary" style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
+        <hr style="margin:15px 0; border:none; border-top:1px solid #eee;">
+        <h4>カテゴリ別支出</h4>
+        <div id="genre-chart"></div>
+    </div>
+    <div class="summary-box">
+        <h4>明細検索</h4>
+        <input type="text" id="search-input" placeholder="検索..." oninput="renderSearch()">
+        <div id="search-results"></div>
+    </div>
+</div>
+
+<div id="page-input" class="page">
+    <h2 id="input-title">収支登録</h2>
+    <input type="hidden" id="edit-id">
+    <label>日付</label><input type="date" id="f-date">
+    <label>タイトル</label><input type="text" id="f-title" placeholder="ガソリンなど">
+    <label>ジャンル</label>
+    <select id="f-genre">
+        <option>食費</option><option>外食</option><option>交通費</option><option>趣味</option>
+        <option>外出</option><option>車</option><option>服</option><option>貯金</option><option>固定費</option><option>その他</option>
+    </select>
+    <label>金額</label><input type="text" id="f-amount">
+    <label>支払い方法</label><select id="f-method"></select>
+    <label>メモ</label><textarea id="f-memo" rows="2"></textarea>
+    <button class="btn-main" onclick="saveEntry()">保存</button>
+    <button id="btn-cancel" onclick="cancelEdit()" style="display:none; margin-top:10px; background:#ccc; border:none; width:100%; padding:10px; border-radius:8px;">キャンセル</button>
+</div>
+
+<div id="page-settings" class="page">
+    <h2>設定</h2>
+    <div class="summary-box">
+        <label>共通月間予算</label><input type="number" id="s-budget">
+        <label>カード (名前:締日:支払日, ...)</label>
+        <input type="text" id="s-cards" placeholder="リクルート:15:10, Olive:20:10">
+        <label>他決済方法 (カンマ区切り)</label>
+        <input type="text" id="s-methods" placeholder="現金, PayPay">
+        <button class="btn-main" onclick="saveSettings()">設定を保存</button>
+    </div>
+
+    <h3>固定費マスタ</h3>
+    <div id="recurring-list" style="margin-bottom:10px;"></div>
+    <div class="summary-box" style="background:#f0f0f0;">
+        <input type="text" id="r-title" placeholder="家賃など">
+        <input type="number" id="r-amount" placeholder="金額">
+        <input type="number" id="r-day" placeholder="日 (1-31)">
+        <select id="r-method" style="margin-bottom:10px;"></select>
+        <button onclick="addRecurring()" style="width:100%; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">固定費を追加</button>
+    </div>
+
+    <div class="summary-box">
+        <h3>バックアップ</h3>
+        <button onclick="exportData()" style="width:100%; padding:10px; background:var(--sub); color:white; border:none; border-radius:8px;">コピー</button>
+        <textarea id="i-backup" placeholder="復元用" rows="2" style="margin-top:10px;"></textarea>
+        <button onclick="importData()" style="width:100%; padding:10px; background:var(--main); color:white; border:none; border-radius:8px;">復元</button>
+    </div>
+</div>
+
+<div class="nav">
+    <div class="nav-item active" id="nav-btn-home" onclick="showPage('home')"><span class="nav-icon">📅</span>カレンダ</div>
+    <div class="nav-item" id="nav-btn-report" onclick="showPage('report')"><span class="nav-icon">📊</span>分析</div>
+    <div class="nav-item" id="nav-btn-input" onclick="showPage('input')"><span class="nav-icon">✍</span>入力</div>
+    <div class="nav-item" id="nav-btn-settings" onclick="showPage('settings')"><span class="nav-icon">⚙</span>設定</div>
+</div>
+
+<script>
+    let entries = JSON.parse(localStorage.getItem('kb_ult_v1_data')) || [];
+    let settings = JSON.parse(localStorage.getItem('kb_ult_v1_sets')) || { budget: 100000, cardData: [], otherMethods: ["現金", "PayPay"] };
+    let recurring = JSON.parse(localStorage.getItem('kb_ult_v1_recs')) || [];
+    let currentViewDate = new Date();
+    let selectedDateStr = new Date().toISOString().split('T')[0];
+
+    function saveLocal() {
+        localStorage.setItem('kb_ult_v1_data', JSON.stringify(entries));
+        localStorage.setItem('kb_ult_v1_sets', JSON.stringify(settings));
+        localStorage.setItem('kb_ult_v1_recs', JSON.stringify(recurring));
+    }
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        document.getElementById('nav-btn-' + pageId).classList.add('active');
+        if(pageId === 'home') renderCalendar();
+        if(pageId === 'report') renderReport();
+        if(pageId === 'settings') renderSettings();
+    }
+
+    function renderCalendar() {
+        checkAndApplyRecurring();
+        const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
+        document.getElementById('month-title').textContent = `${y}年 ${m + 1}月`;
+        const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+        const allMethods = [...settings.otherMethods, ...settings.cardData.map(c => c.name)];
+        const opts = allMethods.map(n => `<option>${n}</option>`).join('');
+        document.getElementById('f-method').innerHTML = opts;
+        document.getElementById('r-method').innerHTML = opts;
+
+        const first = new Date(y, m, 1).getDay();
+        const last = new Date(y, m + 1, 0).getDate();
+        let html = '';
+        for(let i=0; i<first; i++) html += '<div class="day" style="background:#f0f0f0"></div>';
+        for(let d=1; d<=last; d++) {
+            const dStr = `${mStr}-${String(d).padStart(2,'0')}`;
+            const dEntries = entries.filter(e => e.date === dStr);
+            const dSpend = dEntries.filter(e => e.amount < 0).reduce((s,e) => s + e.amount, 0);
+            const dTotal = dSpend + dEntries.filter(e => e.amount > 0).reduce((s,e) => s + e.amount, 0);
+            html += `<div class="day" onclick="showDetails('${dStr}')" style="background:${getAmtColor(dSpend)}">
+                <span>${d}</span><span class="day-sum" style="color:${dTotal < 0 ? '#d32f2f' : '#2e7d32'}">${dTotal !== 0 ? dTotal.toLocaleString() : ''}</span>
+            </div>`;
+        }
+        document.getElementById('calendar').innerHTML = html;
+        showDetails(selectedDateStr);
+    }
+
+    function getAmtColor(s) { s = Math.abs(s); if(s === 0) return "white"; if(s <= 2000) return "#e3f2fd"; if(s <= 10000) return "#fff9c4"; return "#ffcdd2"; }
+
+    function checkAndApplyRecurring() {
+        const mStr = `${currentViewDate.getFullYear()}-${String(currentViewDate.getMonth()+1).padStart(2,'0')}`;
+        recurring.forEach(r => {
+            const t = `[固定] ${r.title}`;
+            if(!entries.some(e => e.date.startsWith(mStr) && e.title === t)) {
+                entries.push({ id: Date.now()+Math.random(), date: `${mStr}-${String(r.day).padStart(2,'0')}`, title: t, genre: "固定費", amount: r.amount, method: r.method, memo: "自動" });
+            }
+        });
+        saveLocal();
+    }
+
+    function renderReport() {
+        const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
+        const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+        const mEntries = entries.filter(e => e.date.startsWith(mStr));
+        const spend = Math.abs(mEntries.filter(e => e.amount < 0).reduce((s,e) => s + e.amount, 0));
+        document.getElementById('report-month-title').textContent = `${y}年 ${m + 1}月`;
+        document.getElementById('report-summary').innerHTML = `<div>予算: ${settings.budget.toLocaleString()}円 / 支出: ${spend.toLocaleString()}円</div>`;
+        
+        let cardHtml = "";
+        settings.cardData.forEach(card => {
+            const start = new Date(y, m - 1, card.closing + 1);
+            const end = new Date(y, m, card.closing);
+            const total = entries.filter(e => { const d = new Date(e.date); return e.method === card.name && d >= start && d <= end; }).reduce((s, e) => s + e.amount, 0);
+            cardHtml += `<div class="detail-item">${card.name}: ${Math.abs(total).toLocaleString()}円</div>`;
+        });
+        document.getElementById('card-summary').innerHTML = cardHtml;
+        
+        const genres = {};
+        mEntries.filter(e => e.amount < 0).forEach(e => genres[e.genre] = (genres[e.genre] || 0) + Math.abs(e.amount));
+        document.getElementById('genre-chart').innerHTML = Object.entries(genres).map(([n, v]) => `<div>${n}: ${v.toLocaleString()}</div>`).join('');
+    }
+
+    function renderSearch() {
+        const q = document.getElementById('search-input').value.toLowerCase();
+        if(!q) return document.getElementById('search-results').innerHTML = "";
+        const res = entries.filter(e => e.title.toLowerCase().includes(q)).reverse();
+        document.getElementById('search-results').innerHTML = res.slice(0,10).map(e => `<div class="detail-item">${e.date} ${e.title}</div>`).join('');
+    }
+
+    function renderSettings() {
+        document.getElementById('s-budget').value = settings.budget;
+        document.getElementById('s-cards').value = settings.cardData.map(c => `${c.name}:${c.closing}:${c.payment}`).join(', ');
+        document.getElementById('s-methods').value = settings.otherMethods.join(', ');
+        document.getElementById('recurring-list').innerHTML = recurring.map(r => `<div class="detail-item">${r.title} (${r.amount}) <button onclick="deleteRec(${r.id})">消</button></div>`).join('');
+    }
+
+    function saveSettings() {
+        settings.budget = parseInt(document.getElementById('s-budget').value) || 0;
+        settings.cardData = document.getElementById('s-cards').value.split(',').filter(s => s.trim()).map(s => {
+            const [n, c, p] = s.split(':').map(x => x.trim()); return { name: n, closing: parseInt(c), payment: parseInt(p) };
+        });
+        settings.otherMethods = document.getElementById('s-methods').value.split(',').map(s => s.trim());
+        saveLocal(); alert('保存');
+    }
+
+    function addRecurring() {
+        const t = document.getElementById('r-title').value;
+        const a = parseFloat(document.getElementById('r-amount').value);
+        if(!t || !a) return;
+        recurring.push({ id: Date.now(), title: t, amount: -Math.abs(a), day: parseInt(document.getElementById('r-day').value) || 1, method: document.getElementById('r-method').value });
+        saveLocal(); renderSettings();
+    }
+
+    function deleteRec(id) { recurring = recurring.filter(r => r.id !== id); saveLocal(); renderSettings(); }
+
+    function showDetails(date) {
+        selectedDateStr = date;
+        const list = entries.filter(e => e.date === date);
+        document.getElementById('details-list').innerHTML = list.map(e => `<div class="detail-item">${e.title} / ${e.amount} <button onclick="deleteEntry(${e.id})">消</button></div>`).join('');
+    }
+
+    function saveEntry() {
+        const id = document.getElementById('edit-id').value;
+        const val = document.getElementById('f-amount').value;
+        let amt = parseFloat(val.replace('+', '')); if(!val.startsWith('+') && amt > 0) amt = -amt;
+        const entry = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('f-date').value, title: document.getElementById('f-title').value || "無題", genre: document.getElementById('f-genre').value, amount: amt || 0, method: document.getElementById('f-method').value };
+        if(id) entries = entries.map(e => e.id === entry.id ? entry : e); else entries.push(entry);
+        saveLocal(); cancelEdit(); showPage('home');
+    }
+
+    function deleteEntry(id) { entries = entries.filter(e => e.id !== id); saveLocal(); renderCalendar(); }
+    function editEntry(id) { const e = entries.find(i => i.id === id); document.getElementById('edit-id').value = e.id; document.getElementById('f-date').value = e.date; document.getElementById('f-title').value = e.title; document.getElementById('f-amount').value = e.amount; showPage('input'); document.getElementById('btn-cancel').style.display='block'; }
+    function cancelEdit() { document.getElementById('edit-id').value = ""; document.getElementById('btn-cancel').style.display = "none"; showPage('home'); }
+    function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
+    function exportData() { navigator.clipboard.writeText(JSON.stringify({entries, settings, recurring})); alert('コピー済'); }
+    function importData() { try { const p = JSON.parse(document.getElementById('i-backup').value); entries = p.entries; settings = p.settings; saveLocal(); location.reload(); } catch(e) { alert('形式ミス'); } }
+    
+    document.getElementById('f-date').valueAsDate = new Date();
+    renderCalendar();
+</script>
+</body>
+</html>
