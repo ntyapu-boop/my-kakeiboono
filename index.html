@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Hybrid</title>
+    <title>家計簿 Pro+ Text</title>
     <style>
         :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #333; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -75,15 +75,10 @@
     
     <div class="box">
         <h4>☁️ バックアップ・復元</h4>
-        <button onclick="copyToClipboard()" class="btn-sm" style="background:var(--sub); width:100%; margin-bottom:10px;">テキストでコピー</button>
-        <textarea id="i-backup" placeholder="復元するテキストをここに貼り付け" rows="2"></textarea>
-        <button onclick="importFromText()" class="btn-sm" style="background:var(--danger); width:100%; margin-bottom:15px;">テキストから復元</button>
-        
-        <hr style="border:none; border-top:1px solid #eee; margin-bottom:15px;">
-        
-        <button onclick="downloadBackup()" class="btn-sm" style="background:var(--success); width:100%; margin-bottom:10px;">ファイルとして保存</button>
-        <input type="file" id="file-input" style="display:none;" onchange="importFromFile(event)">
-        <button onclick="document.getElementById('file-input').click()" class="btn-sm" style="background:var(--main); width:100%;">ファイルから復元</button>
+        <button onclick="copyToClipboard()" class="btn-sm" style="background:var(--sub); width:100%; margin-bottom:10px;">現在のデータをテキストでコピー</button>
+        <textarea id="i-backup" placeholder="復元する文字列をここに貼り付け" rows="3"></textarea>
+        <button onclick="importFromText()" class="btn-sm" style="background:var(--danger); width:100%;">テキストから復元を実行</button>
+        <p style="font-size:10px; color:#888; margin-top:8px;">※復元すると現在のデータは上書きされます。</p>
     </div>
 
     <div class="box">
@@ -173,7 +168,8 @@
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
         document.getElementById('header-month').textContent = `${y}年 ${m + 1}月`;
         const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
-        let html = '', totalOut = 0;
+        let html = '';
+        let totalOut = 0;
         for(let i=0; i<first; i++) html += '<div class="day" style="background:#eee"></div>';
         for(let d=1; d<=last; d++) {
             const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -248,36 +244,22 @@
 
     function copyToClipboard() {
         const text = JSON.stringify({ entries, settings });
-        navigator.clipboard.writeText(text).then(() => alert("コピーしました！"));
+        navigator.clipboard.writeText(text).then(() => alert("コピーしました！メモ帳などに保存してください。"));
     }
 
     function importFromText() {
         const text = document.getElementById('i-backup').value;
+        if(!text) return;
         try {
             const d = JSON.parse(text);
             if(d.entries && d.settings) {
-                entries = d.entries; settings = d.settings; saveLocal(); location.reload();
-            } else { alert("データ形式が正しくありません"); }
-        } catch(e) { alert("パースに失敗しました"); }
-    }
-
-    function downloadBackup() {
-        const data = JSON.stringify({ entries, settings }, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `kakeibo_backup.json`; a.click();
-    }
-
-    function importFromFile(event) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const d = JSON.parse(e.target.result);
-                if(d.entries) { entries = d.entries; settings = d.settings; saveLocal(); location.reload(); }
-            } catch(err) { alert("復元失敗"); }
-        };
-        reader.readAsText(event.target.files[0]);
+                entries = d.entries;
+                settings = d.settings;
+                saveLocal();
+                alert("復元に成功しました！");
+                location.reload();
+            } else { alert("データ形式が正しくありません。"); }
+        } catch(e) { alert("パースに失敗しました。文字列が正しいか確認してください。"); }
     }
 
     function toggleCycleOptions() {
@@ -320,7 +302,7 @@
         settings.cards = document.getElementById('s-cards').value.split(',').filter(s => s.includes(':')).map(s => {
             const [n, c, p] = s.split(':').map(x => x.trim()); return { name: n, close: parseInt(c), pay: parseInt(p) };
         });
-        saveLocal(); alert("完了"); renderSettings();
+        saveLocal(); alert("更新完了"); renderSettings();
     }
 
     function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
