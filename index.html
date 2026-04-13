@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Clean</title>
+    <title>家計簿 Pro+ Hybrid</title>
     <style>
         :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #333; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -72,11 +72,18 @@
 
 <div id="page-settings" class="page">
     <h2>設定・バックアップ</h2>
+    
     <div class="box">
-        <h4>📁 バックアップ (推奨)</h4>
-        <button onclick="downloadBackup()" class="btn" style="background:var(--success); color:white; margin-bottom:10px;">データをファイル保存</button>
+        <h4>☁️ バックアップ・復元</h4>
+        <button onclick="copyToClipboard()" class="btn-sm" style="background:var(--sub); width:100%; margin-bottom:10px;">テキストでコピー</button>
+        <textarea id="i-backup" placeholder="復元するテキストをここに貼り付け" rows="2"></textarea>
+        <button onclick="importFromText()" class="btn-sm" style="background:var(--danger); width:100%; margin-bottom:15px;">テキストから復元</button>
+        
+        <hr style="border:none; border-top:1px solid #eee; margin-bottom:15px;">
+        
+        <button onclick="downloadBackup()" class="btn-sm" style="background:var(--success); width:100%; margin-bottom:10px;">ファイルとして保存</button>
         <input type="file" id="file-input" style="display:none;" onchange="importFromFile(event)">
-        <button onclick="document.getElementById('file-input').click()" class="btn" style="background:var(--main); color:white;">ファイルから復元</button>
+        <button onclick="document.getElementById('file-input').click()" class="btn-sm" style="background:var(--main); width:100%;">ファイルから復元</button>
     </div>
 
     <div class="box">
@@ -107,7 +114,7 @@
 
     <div class="box">
         <label>カード設定 (名:締:払)</label>
-        <input type="text" id="s-cards" placeholder="JCBW:99:10, リクルート:15:10">
+        <input type="text" id="s-cards" placeholder="JCBW:99:10">
         <label>支払い方法 (カンマ区切り)</label>
         <input type="text" id="s-methods">
         <button class="btn btn-main" onclick="saveCustoms()">更新</button>
@@ -239,6 +246,40 @@
             </div>`).join('') || "未登録";
     }
 
+    function copyToClipboard() {
+        const text = JSON.stringify({ entries, settings });
+        navigator.clipboard.writeText(text).then(() => alert("コピーしました！"));
+    }
+
+    function importFromText() {
+        const text = document.getElementById('i-backup').value;
+        try {
+            const d = JSON.parse(text);
+            if(d.entries && d.settings) {
+                entries = d.entries; settings = d.settings; saveLocal(); location.reload();
+            } else { alert("データ形式が正しくありません"); }
+        } catch(e) { alert("パースに失敗しました"); }
+    }
+
+    function downloadBackup() {
+        const data = JSON.stringify({ entries, settings }, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `kakeibo_backup.json`; a.click();
+    }
+
+    function importFromFile(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const d = JSON.parse(e.target.result);
+                if(d.entries) { entries = d.entries; settings = d.settings; saveLocal(); location.reload(); }
+            } catch(err) { alert("復元失敗"); }
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
     function toggleCycleOptions() {
         const c = document.getElementById('r-cycle').value;
         document.getElementById('opt-weekday').style.display = (c === 'weekday' || c === 'weekly') ? 'flex' : 'none';
@@ -256,27 +297,6 @@
         const r = settings.masterRoutines.find(x => x.id === id);
         document.getElementById('r-title').value = r.title; document.getElementById('r-amount').value = r.amount; document.getElementById('r-method').value = r.method; document.getElementById('r-cycle').value = r.cycle; document.getElementById('r-month').value = r.month || ""; document.getElementById('r-day').value = r.day || "";
         toggleCycleOptions(); settings.masterRoutines = settings.masterRoutines.filter(x => x.id !== id); renderSettings();
-    }
-
-    function downloadBackup() {
-        const data = JSON.stringify({ entries, settings }, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `kakeibo_backup.json`;
-        a.click();
-    }
-
-    function importFromFile(event) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const d = JSON.parse(e.target.result);
-                if(d.entries) { entries = d.entries; settings = d.settings; saveLocal(); location.reload(); }
-            } catch(err) { alert("復元失敗"); }
-        };
-        reader.readAsText(event.target.files[0]);
     }
 
     function showPage(p) {
