@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Insights</title>
+    <title>家計簿 Pro+ Clean</title>
     <style>
-        :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #343a40; }
+        :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #333; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
         .page { display: none; padding: 15px; min-height: 100vh; box-sizing: border-box; }
         .page.active { display: block !important; }
@@ -23,14 +23,11 @@
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
         .btn-main { background: var(--main); color: white; }
         .btn-sm { padding: 8px 12px; border-radius: 6px; border: none; font-size: 12px; color: white; cursor: pointer; }
-        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
         .wd-opt { flex:1; text-align:center; padding:8px 0; background:#eee; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold; }
         .wd-opt.active { background:var(--success); color:white; }
-        .rank-item { display: flex; align-items: center; margin-bottom: 8px; }
-        .rank-num { width: 24px; height: 24px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 10px; }
-        .rank-bar-bg { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; position: relative; }
+        .rank-bar-bg { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; position: relative; margin-top: 4px; }
         .rank-bar-fill { height: 100%; background: var(--main); transition: width 0.3s; }
-        .routine-card { background: #f9f9f9; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -38,7 +35,7 @@
 <div id="top-bar" style="padding: 10px 15px 0 15px;">
     <div class="header-summary">
         <span id="header-month">----年--月</span>
-        <span>月間支出: <b id="header-total">0</b> 円</span>
+        <span>支出: <b id="header-total">0</b> 円</span>
     </div>
 </div>
 
@@ -53,33 +50,20 @@
 
 <div id="page-report" class="page">
     <h2>分析・ランキング</h2>
-    
     <div class="box" style="border-left: 5px solid var(--main);">
-        <h4>💳 カード別引落予定</h4>
+        <h4>💳 カード引落予定</h4>
         <div id="card-bill-summary"></div>
     </div>
-
     <div class="box">
-        <h4 id="month-rank-title">4月の支出ランキング</h4>
-        <div id="month-ranking"></div>
-    </div>
-
-    <div class="box">
-        <h4 id="year-rank-title">2026年の累計ランキング</h4>
-        <div id="year-ranking"></div>
-        <hr style="margin:15px 0; border:none; border-top:1px solid #eee;">
-        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-            <span>年間合計支出</span>
-            <span><span id="year-total-val">0</span> 円</span>
-        </div>
+        <h4 id="rank-title">支出ランキング</h4>
+        <div id="ranking-list"></div>
     </div>
 </div>
 
 <div id="page-input" class="page">
-    <h2>収支登録</h2>
+    <h2>登録</h2>
     <input type="date" id="f-date">
-    <input type="text" id="f-title" placeholder="タイトル (例: コンビニ, ガソリン)">
-    <select id="f-genre"></select>
+    <input type="text" id="f-title" placeholder="タイトル">
     <select id="f-method"></select>
     <input type="number" id="f-amount" placeholder="金額">
     <textarea id="f-memo" rows="2" placeholder="メモ"></textarea>
@@ -87,7 +71,14 @@
 </div>
 
 <div id="page-settings" class="page">
-    <h2>固定費・設定</h2>
+    <h2>設定・バックアップ</h2>
+    <div class="box">
+        <h4>📁 バックアップ (推奨)</h4>
+        <button onclick="downloadBackup()" class="btn" style="background:var(--success); color:white; margin-bottom:10px;">データをファイル保存</button>
+        <input type="file" id="file-input" style="display:none;" onchange="importFromFile(event)">
+        <button onclick="document.getElementById('file-input').click()" class="btn" style="background:var(--main); color:white;">ファイルから復元</button>
+    </div>
+
     <div class="box">
         <h4>🔄 固定費マスタ</h4>
         <div id="routine-list"></div>
@@ -97,12 +88,12 @@
             <select id="r-method"></select>
             <select id="r-cycle" onchange="toggleCycleOptions()">
                 <option value="daily">毎日</option>
-                <option value="weekday">特定の曜日</option>
+                <option value="weekday">曜日指定</option>
                 <option value="weekly">毎週</option>
                 <option value="monthly">毎月</option>
                 <option value="yearly">毎年</option>
             </select>
-            <div id="opt-weekday" class="weekday-box" style="display:none; gap:4px; margin-bottom:8px;">
+            <div id="opt-weekday" style="display:none; gap:4px; margin-bottom:8px;">
                 <div class="wd-opt" data-wd="1">月</div><div class="wd-opt" data-wd="2">火</div><div class="wd-opt" data-wd="3">水</div>
                 <div class="wd-opt" data-wd="4">木</div><div class="wd-opt" data-wd="5">金</div><div class="wd-opt" data-wd="6">土</div><div class="wd-opt" data-wd="0">日</div>
             </div>
@@ -110,18 +101,16 @@
                 <input type="number" id="r-month" placeholder="月" style="width:48%; display:inline-block;">
                 <input type="number" id="r-day" placeholder="日" style="width:48%; display:inline-block;">
             </div>
-            <button class="btn-sm" style="background:var(--main); width:100%; padding:12px;" onclick="saveRoutine()">マスタに保存</button>
+            <button class="btn-sm" style="background:var(--main); width:100%;" onclick="saveRoutine()">マスタに追加</button>
         </div>
     </div>
+
     <div class="box">
-        <label>カード設定 (名:締:払)</label><input type="text" id="s-cards">
-        <label>支払い方法</label><input type="text" id="s-methods">
+        <label>カード設定 (名:締:払)</label>
+        <input type="text" id="s-cards" placeholder="JCBW:99:10, リクルート:15:10">
+        <label>支払い方法 (カンマ区切り)</label>
+        <input type="text" id="s-methods">
         <button class="btn btn-main" onclick="saveCustoms()">更新</button>
-    </div>
-    <div class="box">
-        <button onclick="exportData()" class="btn" style="background:var(--sub); color:white;">バックアップ</button>
-        <textarea id="i-backup" placeholder="復元コード" rows="1" style="margin-top:10px;"></textarea>
-        <button onclick="importData()" class="btn-sm" style="background:var(--danger); width:100%;">復元</button>
     </div>
 </div>
 
@@ -133,11 +122,11 @@
 </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('kb_final_data')) || [];
-    let settings = JSON.parse(localStorage.getItem('kb_final_sets')) || {
-        cards: [], methods: ["現金", "JCBW", "リクルート", "Olive"],
-        genres: ["食費", "趣味", "車", "固定費", "その他"], masterRoutines: []
-    };
+    let entries = [];
+    try { entries = JSON.parse(localStorage.getItem('kb_final_data')) || []; } catch(e) { entries = []; }
+    let settings = { cards: [], methods: ["現金", "JCBW", "リクルート", "Olive"], masterRoutines: [] };
+    try { const s = JSON.parse(localStorage.getItem('kb_final_sets')); if(s) settings = s; } catch(e) {}
+
     let currentViewDate = new Date();
 
     function saveLocal() {
@@ -155,15 +144,15 @@
                 let shouldAdd = false;
                 switch (r.cycle) {
                     case 'daily': shouldAdd = true; break;
-                    case 'weekday': if (r.weekdays.includes(dateObj.getDay())) shouldAdd = true; break;
+                    case 'weekday': if (r.weekdays && r.weekdays.includes(dateObj.getDay())) shouldAdd = true; break;
                     case 'monthly': if (parseInt(r.day) === d || (r.day >= 99 && d === lastDay)) shouldAdd = true; break;
                     case 'yearly': if (parseInt(r.month) === (m + 1) && parseInt(r.day) === d) shouldAdd = true; break;
-                    case 'weekly': if (dateObj.getDay() === (r.weekdays[0] || 1)) shouldAdd = true; break;
+                    case 'weekly': if (r.weekdays && dateObj.getDay() === r.weekdays[0]) shouldAdd = true; break;
                 }
                 if (shouldAdd) {
                     const autoTitle = `[固] ${r.title}`;
                     if (!entries.some(e => e.date === dStr && e.title === autoTitle)) {
-                        entries.push({ id: Date.now() + Math.random(), date: dStr, title: autoTitle, genre: "固定費", method: r.method, amount: -Math.abs(r.amount) });
+                        entries.push({ id: Date.now() + Math.random(), date: dStr, title: autoTitle, method: r.method, amount: -Math.abs(r.amount) });
                         updated = true;
                     }
                 }
@@ -198,7 +187,7 @@
     function showDayDetails(date) {
         const list = entries.filter(e => e.date === date);
         let html = `<h4>${date}</h4>` + list.map(e => `
-            <div class="box" style="margin-bottom:8px; padding:10px; display:flex; justify-content:space-between;">
+            <div class="box" style="margin-bottom:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
                 <div><b>${e.title}</b><br><small>${e.method} / ${Math.abs(e.amount).toLocaleString()}円</small></div>
                 <button class="btn-sm" style="background:var(--danger);" onclick="deleteEntry(${e.id})">削除</button>
             </div>`).join('') || "<p>データなし</p>";
@@ -207,22 +196,8 @@
 
     function deleteEntry(id) { entries = entries.filter(e => e.id !== id); saveLocal(); renderCalendar(); document.getElementById('details-list').innerHTML = ""; }
 
-    function getRankingHtml(dataList) {
-        if (dataList.length === 0) return "<p style='font-size:12px; color:#888;'>データがありません</p>";
-        const maxVal = dataList[0].total;
-        return dataList.slice(0, 5).map((item, i) => `
-            <div style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                    <span><b>${i+1}. ${item.title}</b></span>
-                    <span>${item.total.toLocaleString()} 円</span>
-                </div>
-                <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(item.total/maxVal)*100}%"></div></div>
-            </div>`).join('');
-    }
-
     function renderReport() {
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
-        // カード集計
         let billHtml = "";
         settings.cards.forEach(card => {
             let endDate = (card.close === 99) ? new Date(y, m, 0) : new Date(y, m - 1, card.close);
@@ -235,27 +210,19 @@
         });
         document.getElementById('card-bill-summary').innerHTML = billHtml || "設定なし";
 
-        // ランキング集計用
-        const getRankData = (list) => {
-            const counts = {};
-            list.filter(e => e.amount < 0).forEach(e => {
-                const t = e.title.replace("[固] ", "").replace("[ル] ", "");
-                counts[t] = (counts[t] || 0) + Math.abs(e.amount);
-            });
-            return Object.keys(counts).map(k => ({title: k, total: counts[k]})).sort((a,b) => b.total - a.total);
-        };
-
-        // 月間
-        const mEntries = entries.filter(e => e.date.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`));
-        document.getElementById('month-rank-title').textContent = `${m + 1}月の支出ランキング`;
-        document.getElementById('month-ranking').innerHTML = getRankingHtml(getRankData(mEntries));
-
-        // 年間
-        const yEntries = entries.filter(e => e.date.startsWith(String(y)));
-        document.getElementById('year-rank-title').textContent = `${y}年の累計ランキング`;
-        document.getElementById('year-ranking').innerHTML = getRankingHtml(getRankData(yEntries));
-        const yTotal = yEntries.filter(e => e.amount < 0).reduce((s, e) => s + Math.abs(e.amount), 0);
-        document.getElementById('year-total-val').textContent = yTotal.toLocaleString();
+        const counts = {};
+        entries.filter(e => e.date.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`) && e.amount < 0).forEach(e => {
+            const t = e.title.replace("[固] ", "");
+            counts[t] = (counts[t] || 0) + Math.abs(e.amount);
+        });
+        const rankData = Object.keys(counts).map(k => ({title: k, total: counts[k]})).sort((a,b) => b.total - a.total);
+        const max = rankData[0]?.total || 1;
+        document.getElementById('rank-title').textContent = `${m + 1}月の支出ランキング`;
+        document.getElementById('ranking-list').innerHTML = rankData.slice(0, 5).map(item => `
+            <div style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px;"><span>${item.title}</span><span>${item.total.toLocaleString()} 円</span></div>
+                <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(item.total/max)*100}%"></div></div>
+            </div>`).join('') || "データなし";
     }
 
     function renderSettings() {
@@ -263,21 +230,19 @@
         document.getElementById('s-methods').value = settings.methods.join(', ');
         document.getElementById('r-method').innerHTML = settings.methods.map(m => `<option>${m}</option>`).join('');
         document.getElementById('routine-list').innerHTML = settings.masterRoutines.map(r => `
-            <div class="routine-card">
+            <div style="background:#f9f9f9; padding:8px; border-radius:8px; margin-bottom:5px; font-size:12px;">
                 <div style="display:flex; justify-content:space-between;"><b>${r.title}</b> <span>${r.amount.toLocaleString()}円</span></div>
-                <div style="font-size:11px; margin-top:5px;">
-                    ${r.cycle} / ${r.method}
-                    <button class="btn-sm" style="background:var(--main); float:right; margin-left:5px;" onclick="editRoutine(${r.id})">編集</button>
-                    <button class="btn-sm" style="background:var(--danger); float:right;" onclick="settings.masterRoutines=settings.masterRoutines.filter(x=>x.id!==${r.id});saveLocal();renderSettings();">削除</button>
+                <div style="margin-top:5px; text-align:right;">
+                    <button class="btn-sm" style="background:var(--main);" onclick="editRoutine(${r.id})">編集</button>
+                    <button class="btn-sm" style="background:var(--danger);" onclick="settings.masterRoutines=settings.masterRoutines.filter(x=>x.id!==${r.id});saveLocal();renderSettings();">削除</button>
                 </div>
-            </div>`).join('') || "<p style='font-size:12px; color:#888;'>未登録</p>";
+            </div>`).join('') || "未登録";
     }
 
     function toggleCycleOptions() {
         const c = document.getElementById('r-cycle').value;
         document.getElementById('opt-weekday').style.display = (c === 'weekday' || c === 'weekly') ? 'flex' : 'none';
         document.getElementById('opt-date').style.display = (c === 'monthly' || c === 'yearly') ? 'block' : 'none';
-        document.getElementById('r-month').style.display = (c === 'yearly') ? 'inline-block' : 'none';
     }
 
     function saveRoutine() {
@@ -293,6 +258,27 @@
         toggleCycleOptions(); settings.masterRoutines = settings.masterRoutines.filter(x => x.id !== id); renderSettings();
     }
 
+    function downloadBackup() {
+        const data = JSON.stringify({ entries, settings }, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `kakeibo_backup.json`;
+        a.click();
+    }
+
+    function importFromFile(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const d = JSON.parse(e.target.result);
+                if(d.entries) { entries = d.entries; settings = d.settings; saveLocal(); location.reload(); }
+            } catch(err) { alert("復元失敗"); }
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
     function showPage(p) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -301,16 +287,25 @@
         if(p === 'home') renderCalendar();
         if(p === 'report') renderReport();
         if(p === 'settings') renderSettings();
-        if(p === 'input') setupInput();
     }
 
-    function setupInput() { document.getElementById('f-date').valueAsDate = new Date(); document.getElementById('f-genre').innerHTML = settings.genres.map(g => `<option>${g}</option>`).join(''); document.getElementById('f-method').innerHTML = settings.methods.map(m => `<option>${m}</option>`).join(''); }
-    function saveEntry() { const amt = parseInt(document.getElementById('f-amount').value); if(!amt) return; entries.push({ id: Date.now(), date: document.getElementById('f-date').value, title: document.getElementById('f-title').value || "無題", genre: document.getElementById('f-genre').value, method: document.getElementById('f-method').value, amount: -Math.abs(amt) }); saveLocal(); showPage('home'); }
-    function saveCustoms() { settings.methods = document.getElementById('s-methods').value.split(',').map(s => s.trim()); settings.cards = document.getElementById('s-cards').value.split(',').filter(s => s.includes(':')).map(s => { const [n, c, p] = s.split(':').map(x => x.trim()); return { name: n, close: parseInt(c), pay: parseInt(p) }; }); saveLocal(); alert("更新完了"); renderSettings(); }
-    document.querySelectorAll('.wd-opt').forEach(opt => opt.onclick = () => opt.classList.toggle('active'));
+    function saveEntry() {
+        const amt = parseInt(document.getElementById('f-amount').value); if(!amt) return;
+        entries.push({ id: Date.now(), date: document.getElementById('f-date').value, title: document.getElementById('f-title').value || "無題", method: document.getElementById('f-method').value, amount: -Math.abs(amt) });
+        saveLocal(); showPage('home');
+    }
+
+    function saveCustoms() {
+        settings.methods = document.getElementById('s-methods').value.split(',').map(s => s.trim());
+        settings.cards = document.getElementById('s-cards').value.split(',').filter(s => s.includes(':')).map(s => {
+            const [n, c, p] = s.split(':').map(x => x.trim()); return { name: n, close: parseInt(c), pay: parseInt(p) };
+        });
+        saveLocal(); alert("完了"); renderSettings();
+    }
+
     function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
-    function exportData() { navigator.clipboard.writeText(JSON.stringify({entries, settings})); alert("コピー完了"); }
-    function importData() { try { const d = JSON.parse(document.getElementById('i-backup').value); entries = d.entries; settings = d.settings; saveLocal(); location.reload(); } catch(e) { alert("失敗"); } }
+    document.querySelectorAll('.wd-opt').forEach(opt => opt.onclick = () => opt.classList.toggle('active'));
+    document.getElementById('f-date').valueAsDate = new Date();
     showPage('home');
 </script>
 </body>
