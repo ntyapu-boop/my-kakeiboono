@@ -3,275 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Fixed</title>
+    <title>家計簿 Pro+ Complete Management</title>
     <style>
-        :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #333; }
+        :root { --main: #007bff; --bg: #f2f2f7; --danger: #ff3b30; --success: #34c759; --sub: #8e8e93; --dark: #1c1c1e; }
         body { font-family: -apple-system, "Hiragino Sans", sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
         
-        /* HEADER */
-        .header-summary { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; font-size: 14px; }
-        .header-summary b { font-size: 18px; }
-
-        /* CALENDAR */
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border-top: 1px solid #ccc; }
-        .day { background: white; min-height: 85px; padding: 4px; box-sizing: border-box; font-size: 11px; cursor: pointer; display: flex; flex-direction: column; }
-        .day.sun { color: #d9534f; background: #fff5f5; } 
-        .day.sat { color: #428bca; background: #f5faff; }
-        .day-num { font-weight: bold; margin-bottom: 2px; }
-        .day-sum { text-align: center; font-weight: bold; margin-top: auto; font-size: 10px; }
-        
-        /* 色分け設定（4/8ベースの基準） */
-        .lv-low { background-color: #e3f2fd !important; }
-        .lv-mid { background-color: #fff9c4 !important; }
-        .lv-high { background-color: #ffccbc !important; }
-        .lv-huge { background-color: #ff8a80 !important; }
-
-        /* UI ELEMENTS */
+        .header-summary { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .header-summary b { font-size: 20px; color: #ff9f0a; }
         .page { display: none; padding: 15px; }
         .page.active { display: block; }
-        .input-type-toggle { display: flex; background: #e0e0e0; border-radius: 8px; padding: 3px; margin-bottom: 15px; }
-        .toggle-btn { flex: 1; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .toggle-btn.active { background: var(--main); color: white; }
+        .card { background: white; border-radius: 14px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .field-label { font-size: 12px; font-weight: bold; margin-bottom: 6px; display: block; color: var(--sub); }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 12px; box-sizing: border-box; background: #fff; }
         
-        .field-label { font-size: 13px; font-weight: bold; margin-bottom: 6px; display: block; color: #555; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 12px; background: white; }
-        
-        .btn-save { background: var(--main); color: white; width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; }
-        .btn-cancel { background: var(--sub); color: white; width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; }
+        /* ボタン類 */
+        .btn-main { background: var(--main); color: white; width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; }
+        .btn-sub { background: #e5e5ea; color: #333; padding: 10px; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; }
+        .btn-edit { background: var(--main); color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 11px; margin-right: 5px; }
+        .btn-danger { background: var(--danger); color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 11px; }
 
-        /* LIST & ACTIONS */
-        .entry-card { background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .entry-info { display: flex; justify-content: space-between; }
-        .entry-actions { display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; }
-        .btn-action { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; color: white; }
+        /* カレンダー */
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; }
+        .day { min-height: 85px; padding: 4px; display: flex; flex-direction: column; background: white; cursor: pointer; font-size: 11px; }
+        .day-sum { text-align: center; font-weight: bold; margin-top: auto; font-size: 10px; }
 
-        /* NAVIGATION */
-        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 75px; z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; padding-top: 12px; font-size: 11px; color: #888; }
+        .fixed-section-title { font-size: 13px; font-weight: bold; color: var(--main); margin: 15px 0 8px 0; border-left: 4px solid var(--main); padding-left: 8px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .weekday-picker { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; }
+
+        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 80px; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; text-align: center; padding-top: 12px; font-size: 10px; color: var(--sub); }
         .nav-item.active { color: var(--main); font-weight: bold; }
-        .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <div class="header-summary">
-    <span id="header-month">----年--月</span>
-    <span>支出計: <b id="header-total">0</b> 円</span>
+    <span id="header-month">----年 --月</span>
+    <span>残予算: <b id="header-budget">0</b> 円</span>
 </div>
 
 <div id="page-home" class="page active">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
-        <button onclick="changeMonth(-1)" style="border:none;background:none;font-size:24px;">◀</button>
-        <span style="font-weight:bold;">カレンダー</span>
-        <button onclick="changeMonth(1)" style="border:none;background:none;font-size:24px;">▶</button>
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+        <button onclick="changeMonth(-1)" class="btn-sub">◀</button>
+        <b id="cal-title">カレンダー</b>
+        <button onclick="changeMonth(1)" class="btn-sub">▶</button>
     </div>
     <div class="calendar" id="calendar"></div>
-    <div id="details-list" style="margin-top:20px;"></div>
+    <div id="details-list" class="card" style="margin-top:15px; display:none;"></div>
 </div>
 
 <div id="page-input" class="page">
-    <h2 id="input-title" style="font-size:20px; margin-bottom:20px;">収支登録</h2>
-    <input type="hidden" id="f-id">
-    
-    <div class="input-type-toggle">
-        <div class="toggle-btn active" id="type-out" onclick="setEntryType('out')">支出</div>
-        <div class="toggle-btn" id="type-in" onclick="setEntryType('in')">収入</div>
+    <div class="card">
+        <h3 id="input-ui-title">収支登録</h3>
+        <input type="hidden" id="f-id">
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+            <button id="type-out" class="btn-main" onclick="setInout('out')" style="flex:1;">支出</button>
+            <button id="type-in" class="btn-sub" onclick="setInout('in')" style="flex:1;">収入</button>
+        </div>
+        <input type="date" id="f-date">
+        <input type="text" id="f-title" placeholder="タイトル">
+        <input type="number" id="f-amount" placeholder="金額" inputmode="numeric">
+        <label class="field-label">ジャンル / 支払い方法</label>
+        <div style="display:flex; gap:10px;">
+            <select id="f-genre" style="flex:1;"></select>
+            <select id="f-method" style="flex:1;"></select>
+        </div>
+        <textarea id="f-memo" rows="2" placeholder="メモ"></textarea>
+        <button class="btn-main" onclick="saveEntry()">保存</button>
+        <button class="btn-sub" id="btn-cancel" style="width:100%; margin-top:10px; display:none;" onclick="resetInput(); showPage('home');">キャンセル</button>
     </div>
+</div>
 
-    <label class="field-label">日付</label>
-    <input type="date" id="f-date">
-    <label class="field-label">タイトル</label>
-    <input type="text" id="f-title" placeholder="ガソリン代、給料など">
-    <label class="field-label">ジャンル</label>
-    <select id="f-genre"></select>
-    <label class="field-label">支払い方法</label>
-    <select id="f-method"></select>
-    <label class="field-label">金額</label>
-    <input type="number" id="f-amount" placeholder="金額を入力" inputmode="numeric">
-    <label class="field-label">メモ</label>
-    <textarea id="f-memo" rows="2" placeholder="メモ"></textarea>
-
-    <button class="btn-save" onclick="saveEntry()">保存</button>
-    <button class="btn-cancel" id="btn-cancel-edit" style="display:none;" onclick="showPage('home')">キャンセル</button>
+<div id="page-analysis" class="page">
+    <div class="card"><h4>収支サマリー</h4><div id="ana-summary"></div></div>
+    <div class="card"><h4>クレカ支払予定</h4><div id="ana-card-pay"></div></div>
 </div>
 
 <div id="page-settings" class="page">
-    <h2 style="font-size:20px;">設定</h2>
-    <div class="box" style="background:white; padding:15px; border-radius:12px; margin-bottom:15px;">
-        <label class="field-label">💳 支払い方法 (カンマ区切り)</label>
-        <textarea id="s-methods" rows="2"></textarea>
-        <button class="btn-save" style="padding:10px; font-size:14px;" onclick="saveCustoms()">マスタ更新</button>
+    <div class="card">
+        <h4>💳 クレジットカード設定</h4>
+        <div id="card-list"></div>
+        <div style="background:#f9f9f9; padding:12px; border-radius:10px; margin-top:10px;">
+            <input type="hidden" id="c-id">
+            <input type="text" id="c-name" placeholder="カード名">
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="c-close" placeholder="締(1-31,末99)" style="flex:1;">
+                <input type="number" id="c-pay" placeholder="払(1-31)" style="flex:1;">
+            </div>
+            <button id="btn-card-save" class="btn-sub" onclick="addCard()" style="width:100%;">カードを追加・更新</button>
+        </div>
     </div>
-    
-    <div class="box" style="background:white; padding:15px; border-radius:12px;">
-        <h4>☁️ バックアップ・復元</h4>
-        <textarea id="i-backup" placeholder="JSONデータを貼り付け" rows="5" style="font-size:10px;"></textarea>
-        <button onclick="importData()" style="width:100%; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px; font-weight:bold;">データを復元する</button>
+
+    <div class="card">
+        <h4>🔁 固定費管理</h4>
+        <div id="fixed-list-monthly"></div>
+        <div id="fixed-list-weekly"></div>
+        <div id="fixed-list-yearly"></div>
+        <div style="background:#f2f2f7; padding:12px; border-radius:10px; margin-top:15px;">
+            <input type="hidden" id="fix-id">
+            <input type="text" id="fix-name" placeholder="項目名">
+            <select id="fix-type" onchange="toggleFixUI()">
+                <option value="monthly">毎月 (日指定)</option>
+                <option value="weekly">毎週 (曜日選択)</option>
+                <option value="yearly">毎年 (月日指定)</option>
+            </select>
+            <div id="fix-ui-monthly"><input type="number" id="fix-val-day" placeholder="日 (1-31)"></div>
+            <div id="fix-ui-weekly" style="display:none;">
+                <div class="weekday-picker">
+                    <label>日<input type="checkbox" name="fix-w" value="0"></label>
+                    <label>月<input type="checkbox" name="fix-w" value="1"></label>
+                    <label>火<input type="checkbox" name="fix-w" value="2"></label>
+                    <label>水<input type="checkbox" name="fix-w" value="3"></label>
+                    <label>木<input type="checkbox" name="fix-w" value="4"></label>
+                    <label>金<input type="checkbox" name="fix-w" value="5"></label>
+                    <label>土<input type="checkbox" name="fix-w" value="6"></label>
+                </div>
+            </div>
+            <div id="fix-ui-yearly" style="display:none; display:flex; gap:5px;">
+                <input type="number" id="fix-val-m" placeholder="月" style="flex:1;"><input type="number" id="fix-val-d" placeholder="日" style="flex:1;">
+            </div>
+            <input type="number" id="fix-amt" placeholder="金額">
+            <select id="fix-method"></select>
+            <button id="btn-fix-save" class="btn-sub" onclick="addFixed()" style="width:100%;">固定費を登録・更新</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h4>🛠️ バックアップ・復元</h4>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button class="btn-sub" style="flex:1; background:var(--dark); color:white;" onclick="exportJSON()">JSON保存</button>
+            <button class="btn-sub" style="flex:1;" onclick="document.getElementById('file-input').click()">JSON読込</button>
+        </div>
+        <input type="file" id="file-input" style="display:none" onchange="importFile(event)">
+        <textarea id="io-text" rows="3" placeholder="バックアップテキストをここに貼り付けて復元"></textarea>
+        <button class="btn-sub" style="width:100%;" onclick="importText()">テキストから復元</button>
     </div>
 </div>
 
 <div class="nav">
-    <div class="nav-item active" id="nav-home" onclick="showPage('home')"><span class="nav-icon">📅</span>カレンダー</div>
-    <div class="nav-item" id="nav-input" onclick="showPage('input')"><span class="nav-icon">✍️</span>入力</div>
-    <div class="nav-item" id="nav-settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>設定</div>
+    <div class="nav-item active" id="nav-home" onclick="showPage('home')"><span>📅</span><br>カレンダー</div>
+    <div class="nav-item" id="nav-input" onclick="showPage('input')"><span>✍️</span><br>入力</div>
+    <div class="nav-item" id="nav-analysis" onclick="showPage('analysis')"><span>📊</span><br>分析</div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('settings')"><span>⚙️</span><br>設定</div>
 </div>
 
 <script>
     let entries = [];
-    let settings = { 
-        methods: ["現金", "Olive", "JCBW", "楽天", "PayPay", "manaca", "suica"], 
-        genres: ["食費", "外食", "趣味", "旅行・観光", "交通費", "車", "固定費", "その他"]
-    };
-    let currentEntryType = 'out';
+    let settings = { budget: 200000, genres: ["食費","外食","趣味","交通費","車","固定費","その他"], methods: ["現金","JCBW","Olive","PayPay","manaca"], cards: [], fixed: [] };
+    let currentInout = 'out';
     let currentViewDate = new Date();
 
-    function loadLocalStorage() {
-        const d = localStorage.getItem('kb_data'), s = localStorage.getItem('kb_sets');
+    function init() {
+        const d = localStorage.getItem('kb_f_data'), s = localStorage.getItem('kb_f_sets');
         if(d) entries = JSON.parse(d);
-        if(s) settings = JSON.parse(s);
+        if(s) settings = {...settings, ...JSON.parse(s)};
+        updateSelects(); renderAll();
     }
 
-    function saveLocal() {
-        localStorage.setItem('kb_data', JSON.stringify(entries));
-        localStorage.setItem('kb_sets', JSON.stringify(settings));
+    function save() {
+        localStorage.setItem('kb_f_data', JSON.stringify(entries));
+        localStorage.setItem('kb_f_sets', JSON.stringify(settings));
     }
+
+    function renderAll() { renderCalendar(); renderSettings(); }
 
     function renderCalendar() {
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
-        document.getElementById('header-month').textContent = `${y}年 ${m + 1}月`;
-        const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
-        let html = '', totalOut = 0;
-        
+        document.getElementById('header-month').textContent = `${y}年 ${m+1}月`;
+        const first = new Date(y, m, 1).getDay(), last = new Date(y, m+1, 0).getDate();
+        let html = '', mOut = 0;
         for(let i=0; i<first; i++) html += '<div class="day" style="background:#eee"></div>';
         
         for(let d=1; d<=last; d++) {
-            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const dSum = entries.filter(e => e.date === dStr).reduce((s, e) => s + Number(e.amount), 0);
-            if(dSum < 0) totalOut += Math.abs(dSum);
+            const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dEntries = entries.filter(e => e.date === dStr);
+            const dSum = dEntries.reduce((s,e) => s + Number(e.amount), 0);
+            if(dSum < 0) mOut += Math.abs(dSum);
             
-            let lv = "";
-            const absSum = Math.abs(dSum);
-            if(absSum >= 20000) lv = "lv-huge";
-            else if(absSum >= 10000) lv = "lv-high";
-            else if(absSum >= 5000) lv = "lv-mid";
-            else if(absSum > 0) lv = "lv-low";
-            
-            const dayClass = (new Date(y, m, d)).getDay() === 0 ? "sun" : ((new Date(y, m, d)).getDay() === 6 ? "sat" : "");
-            html += `<div class="day ${lv} ${dayClass}" onclick="showDayDetails('${dStr}')">
-                        <span class="day-num">${d}</span>
-                        <span class="day-sum">${dSum !== 0 ? absSum.toLocaleString() : ''}</span>
-                    </div>`;
+            let abs = Math.abs(dSum);
+            let bgColor = "#ffffff"; // 0円・未入力時は白
+            let textColor = "#1c1c1e";
+
+            // 金額が0より大きい場合のみ色を付ける
+            if (abs > 0) {
+                if (abs <= 999) {
+                    bgColor = "#e8f5e9"; textColor = "#2e7d32"; // 緑
+                } else if (abs <= 3000) {
+                    bgColor = "#e3f2fd"; textColor = "#1565c0"; // 青
+                } else if (abs <= 5000) {
+                    bgColor = "#fce4ec"; textColor = "#c2185b"; // ピンク
+                } else if (abs <= 10000) {
+                    bgColor = "#ffebee"; textColor = "#c62828"; // 赤
+                } else if (abs <= 30000) {
+                    bgColor = "#f3e5f5"; textColor = "#7b1fa2"; // 紫
+                } else {
+                    bgColor = "#4a148c"; textColor = "#ffffff"; // 3万超
+                }
+            }
+
+            html += `
+                <div class="day" onclick="showDetails('${dStr}')" style="background-color: ${bgColor}; color: ${textColor};">
+                    <span style="font-weight:bold">${d}</span>
+                    <span class="day-sum" style="color: inherit;">${abs > 0 ? abs.toLocaleString() : ''}</span>
+                </div>`;
         }
         document.getElementById('calendar').innerHTML = html;
-        document.getElementById('header-total').textContent = totalOut.toLocaleString();
+        document.getElementById('header-budget').textContent = (settings.budget - mOut).toLocaleString();
     }
 
-    function showDayDetails(date) {
-        const list = entries.filter(e => e.date === date);
-        let html = `<h4 style="margin: 10px 0;">${date}</h4>`;
-        html += list.map(e => `
-            <div class="entry-card">
-                <div class="entry-info">
-                    <div><b>${e.title}</b><br><small>${e.method} / ${e.genre}</small></div>
-                    <b style="color:${e.amount < 0 ? 'red':'green'}">${Math.abs(e.amount).toLocaleString()}円</b>
-                </div>
-                <div class="entry-actions">
-                    <button class="btn-action" style="background:var(--main);" onclick="editEntry(${e.id})">編集</button>
-                    <button class="btn-action" style="background:var(--danger);" onclick="deleteEntry(${e.id})">削除</button>
-                </div>
-            </div>`).join('') || "<p>なし</p>";
-        document.getElementById('details-list').innerHTML = html;
+    function showDetails(date) {
+        const dEntries = entries.filter(e => e.date === date);
+        const area = document.getElementById('details-list'); area.style.display = "block";
+        let html = `<h4>${date}</h4>`;
+        html += dEntries.map(e => `
+            <div class="setting-item">
+                <div><b>${e.title}</b><br><small>${e.method}</small></div>
+                <div><b style="color:${e.amount<0?'red':'green'}">${Math.abs(e.amount).toLocaleString()}円</b> 
+                <button class="btn-edit" onclick="editEntry(${e.id})">編集</button>
+                <button class="btn-danger" onclick="delEntry(${e.id})">削除</button></div>
+            </div>`).join('') || "データなし";
+        area.innerHTML = html;
         window.scrollTo(0, document.body.scrollHeight);
     }
 
     function saveEntry() {
         const id = document.getElementById('f-id').value;
-        const amt = parseInt(document.getElementById('f-amount').value);
-        if(!amt) return;
-        const data = {
-            id: id ? parseFloat(id) : Date.now(),
-            date: document.getElementById('f-date').value,
-            title: document.getElementById('f-title').value || "無題",
-            genre: document.getElementById('f-genre').value,
-            method: document.getElementById('f-method').value,
-            amount: currentEntryType === 'out' ? -Math.abs(amt) : Math.abs(amt),
-            memo: document.getElementById('f-memo').value
-        };
-        if(id) entries = entries.map(e => e.id == id ? data : e);
-        else entries.push(data);
-        saveLocal(); resetInput(); showPage('home');
+        const data = { id: id ? parseFloat(id) : Date.now(), date: document.getElementById('f-date').value, title: document.getElementById('f-title').value || "無題", amount: currentInout==='out'?-Math.abs(document.getElementById('f-amount').value):Math.abs(document.getElementById('f-amount').value), genre: document.getElementById('f-genre').value, method: document.getElementById('f-method').value, memo: document.getElementById('f-memo').value };
+        if(id) entries = entries.map(e => e.id == id ? data : e); else entries.push(data);
+        save(); resetInput(); showPage('home');
     }
 
     function editEntry(id) {
-        const e = entries.find(x => x.id == id);
-        if(!e) return;
-        showPage('input');
-        document.getElementById('input-title').textContent = "編集";
-        document.getElementById('f-id').value = e.id;
-        document.getElementById('f-date').value = e.date;
-        document.getElementById('f-title').value = e.title;
-        document.getElementById('f-genre').value = e.genre;
-        document.getElementById('f-method').value = e.method;
-        document.getElementById('f-amount').value = Math.abs(e.amount);
-        document.getElementById('f-memo').value = e.memo || "";
-        setEntryType(e.amount < 0 ? 'out' : 'in');
-        document.getElementById('btn-cancel-edit').style.display = "block";
+        const e = entries.find(x => x.id == id); showPage('input');
+        document.getElementById('input-ui-title').innerText = "データを編集";
+        document.getElementById('f-id').value = e.id; document.getElementById('f-date').value = e.date; document.getElementById('f-title').value = e.title; document.getElementById('f-amount').value = Math.abs(e.amount); setInout(e.amount<0?'out':'in');
+        document.getElementById('btn-cancel').style.display="block";
     }
 
-    function deleteEntry(id) { if(confirm("削除？")) { entries = entries.filter(e => e.id != id); saveLocal(); renderCalendar(); document.getElementById('details-list').innerHTML = ""; } }
+    function delEntry(id) { if(confirm("削除しますか？")) { entries = entries.filter(e => e.id != id); save(); renderCalendar(); document.getElementById('details-list').style.display="none"; } }
 
-    function resetInput() {
-        document.getElementById('f-id').value = "";
-        document.getElementById('f-title').value = "";
-        document.getElementById('f-amount').value = "";
-        document.getElementById('f-memo').value = "";
-        document.getElementById('input-title').textContent = "収支登録";
-        document.getElementById('btn-cancel-edit').style.display = "none";
-        document.getElementById('f-date').valueAsDate = new Date();
+    function addCard() {
+        const id = document.getElementById('c-id').value;
+        const data = { id: id ? parseFloat(id) : Date.now(), name: document.getElementById('c-name').value, closeDay: document.getElementById('c-close').value, payDay: document.getElementById('c-pay').value };
+        if(id) settings.cards = settings.cards.map(c => c.id == id ? data : c); else settings.cards.push(data);
+        save(); renderSettings(); resetCardInput();
     }
 
-    function setEntryType(t) {
-        currentEntryType = t;
-        document.getElementById('type-out').classList.toggle('active', t === 'out');
-        document.getElementById('type-in').classList.toggle('active', t === 'in');
-    }
-
-    function showPage(p) {
-        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('page-' + p).classList.add('active');
-        document.getElementById('nav-' + p).classList.add('active');
-        if(p === 'home') renderCalendar();
-        if(p === 'input' || p === 'settings') renderSettings();
+    function addFixed() {
+        const id = document.getElementById('fix-id').value;
+        const type = document.getElementById('fix-type').value;
+        let val = "";
+        if(type==='monthly') val = document.getElementById('fix-val-day').value;
+        else if(type==='yearly') val = `${document.getElementById('fix-val-m').value}-${document.getElementById('fix-val-d').value}`;
+        else { val = Array.from(document.querySelectorAll('input[name="fix-w"]:checked')).map(c => c.value); }
+        const data = { id: id ? parseFloat(id) : Date.now(), name: document.getElementById('fix-name').value, type, val, amt: document.getElementById('fix-amt').value, method: document.getElementById('fix-method').value };
+        if(id) settings.fixed = settings.fixed.map(f => f.id == id ? data : f); else settings.fixed.push(data);
+        save(); renderSettings(); resetFixInput();
     }
 
     function renderSettings() {
-        document.getElementById('s-methods').value = settings.methods.join(', ');
-        document.getElementById('f-method').innerHTML = settings.methods.map(m => `<option>${m}</option>`).join('');
-        document.getElementById('f-genre').innerHTML = settings.genres.map(g => `<option>${g}</option>`).join('');
+        document.getElementById('card-list').innerHTML = settings.cards.map(c => `<div class="setting-item"><span>${c.name}</span><div><button class="btn-edit" onclick="editCard(${c.id})">編集</button><button class="btn-danger" onclick="settings.cards=settings.cards.filter(x=>x.id!=${c.id});save();renderSettings();">削除</button></div></div>`).join('');
+        const fList = (type) => settings.fixed.filter(f => f.type === type).map(f => `<div class="setting-item"><span>${f.name} (${Number(f.amt).toLocaleString()}円)</span><div><button class="btn-edit" onclick="editFixed(${f.id})">編集</button><button class="btn-danger" onclick="settings.fixed=settings.fixed.filter(x=>x.id!=${f.id});save();renderSettings();">削除</button></div></div>`).join('');
+        document.getElementById('fixed-list-monthly').innerHTML = fList('monthly');
+        document.getElementById('fixed-list-weekly').innerHTML = fList('weekly');
+        document.getElementById('fixed-list-yearly').innerHTML = fList('yearly');
     }
 
-    function saveCustoms() {
-        settings.methods = document.getElementById('s-methods').value.split(',').map(s => s.trim()).filter(s => s);
-        saveLocal(); alert("OK");
-    }
+    function exportJSON() { const blob = new Blob([JSON.stringify({entries, settings})], {type:'application/json'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`kakeibo_pro.json`; a.click(); }
+    function importFile(ev) { const reader = new FileReader(); reader.onload=(e)=>processImport(JSON.parse(e.target.result)); reader.readAsText(ev.target.files[0]); }
+    function importText() { try { processImport(JSON.parse(document.getElementById('io-text').value)); } catch(e) { alert("無効な形式です"); } }
+    function processImport(data) { entries=data.entries || []; settings=data.settings || settings; save(); location.reload(); }
 
-    function importData() {
-        try {
-            const raw = document.getElementById('i-backup').value;
-            const data = JSON.parse(raw);
-            if(data.entries) entries = data.entries;
-            if(data.settings) settings = data.settings;
-            saveLocal();
-            alert("復元完了");
-            location.reload();
-        } catch(e) { alert("失敗"); }
-    }
+    function editCard(id) { const c = settings.cards.find(x => x.id == id); document.getElementById('c-id').value=c.id; document.getElementById('c-name').value=c.name; document.getElementById('c-close').value=c.closeDay; document.getElementById('c-pay').value=c.payDay; }
+    function editFixed(id) { const f = settings.fixed.find(x => x.id == id); document.getElementById('fix-id').value=f.id; document.getElementById('fix-name').value=f.name; document.getElementById('fix-type').value=f.type; toggleFixUI(); document.getElementById('fix-amt').value=f.amt; if(f.type==='monthly') document.getElementById('fix-val-day').value=f.val; }
+    
+    function showPage(p) { document.querySelectorAll('.page').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active')); document.getElementById('page-'+p).classList.add('active'); document.getElementById('nav-'+p).classList.add('active'); if(p==='home') renderCalendar(); }
+    function toggleFixUI() { const t = document.getElementById('fix-type').value; document.getElementById('fix-ui-monthly').style.display=t==='monthly'?'block':'none'; document.getElementById('fix-ui-weekly').style.display=t==='weekly'?'block':'none'; document.getElementById('fix-ui-yearly').style.display=t==='yearly'?'flex':'none'; }
+    function setInout(t) { currentInout=t; document.getElementById('type-out').className=t==='out'?'btn-main':'btn-sub'; document.getElementById('type-in').className=t==='in'?'btn-main':'btn-sub'; }
+    function updateSelects() { const g = settings.genres.map(x=>`<option value="${x}">${x}</option>`).join(''); const m = settings.methods.map(x=>`<option value="${x}">${x}</option>`).join(''); document.getElementById('f-genre').innerHTML=g; document.getElementById('f-method').innerHTML=m; document.getElementById('fix-method').innerHTML=m; }
+    function changeMonth(v) { currentViewDate.setMonth(currentViewDate.getMonth()+v); renderCalendar(); }
+    function resetInput() { document.getElementById('f-id').value=""; document.getElementById('f-title').value=""; document.getElementById('f-amount').value=""; document.getElementById('btn-cancel').style.display="none"; }
+    function resetCardInput() { document.getElementById('c-id').value=""; document.getElementById('c-name').value=""; }
+    function resetFixInput() { document.getElementById('fix-id').value=""; document.getElementById('fix-name').value=""; }
 
-    function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
-
-    loadLocalStorage();
-    showPage('home');
+    init();
 </script>
 </body>
 </html>
