@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Final</title>
+    <title>家計簿 Pro+ Fixed</title>
     <style>
         :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #333; }
         body { font-family: -apple-system, "Hiragino Sans", sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -12,21 +12,21 @@
         .header-summary { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; font-size: 14px; }
         .header-summary b { font-size: 18px; }
 
-        /* CALENDAR (Color Logic) */
+        /* CALENDAR */
         .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border-top: 1px solid #ccc; }
-        .day { background: white; min-height: 90px; padding: 4px; box-sizing: border-box; font-size: 11px; cursor: pointer; display: flex; flex-direction: column; }
+        .day { background: white; min-height: 85px; padding: 4px; box-sizing: border-box; font-size: 11px; cursor: pointer; display: flex; flex-direction: column; }
         .day.sun { color: #d9534f; background: #fff5f5; } 
         .day.sat { color: #428bca; background: #f5faff; }
         .day-num { font-weight: bold; margin-bottom: 2px; }
         .day-sum { text-align: center; font-weight: bold; margin-top: auto; font-size: 10px; }
         
-        /* 色分けレベル */
-        .lv-low { background-color: #e3f2fd !important; } /* 少額支出 */
-        .lv-mid { background-color: #fff9c4 !important; } /* 中額支出 */
-        .lv-high { background-color: #ffccbc !important; } /* 高額支出 */
-        .lv-huge { background-color: #ff8a80 !important; } /* 非常に高額 */
+        /* 色分け設定（4/8ベースの基準） */
+        .lv-low { background-color: #e3f2fd !important; }
+        .lv-mid { background-color: #fff9c4 !important; }
+        .lv-high { background-color: #ffccbc !important; }
+        .lv-huge { background-color: #ff8a80 !important; }
 
-        /* INPUT & EDIT UI */
+        /* UI ELEMENTS */
         .page { display: none; padding: 15px; }
         .page.active { display: block; }
         .input-type-toggle { display: flex; background: #e0e0e0; border-radius: 8px; padding: 3px; margin-bottom: 15px; }
@@ -34,20 +34,20 @@
         .toggle-btn.active { background: var(--main); color: white; }
         
         .field-label { font-size: 13px; font-weight: bold; margin-bottom: 6px; display: block; color: #555; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; background: white; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 12px; background: white; }
         
         .btn-save { background: var(--main); color: white; width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; }
         .btn-cancel { background: var(--sub); color: white; width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; }
 
-        /* LIST ITEM (Delete & Edit buttons) */
-        .entry-card { background: white; padding: 12px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .entry-info { display: flex; justify-content: space-between; align-items: flex-start; }
-        .entry-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
-        .btn-action { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; color: white; }
+        /* LIST & ACTIONS */
+        .entry-card { background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .entry-info { display: flex; justify-content: space-between; }
+        .entry-actions { display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; }
+        .btn-action { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; color: white; }
 
-        /* NAV */
+        /* NAVIGATION */
         .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 75px; z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; padding-top: 12px; font-size: 11px; color: #888; cursor: pointer; }
+        .nav-item { flex: 1; text-align: center; padding-top: 12px; font-size: 11px; color: #888; }
         .nav-item.active { color: var(--main); font-weight: bold; }
         .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
     </style>
@@ -56,7 +56,7 @@
 
 <div class="header-summary">
     <span id="header-month">----年--月</span>
-    <span>今月の支出計: <b id="header-total">0</b> 円</span>
+    <span>支出計: <b id="header-total">0</b> 円</span>
 </div>
 
 <div id="page-home" class="page active">
@@ -66,7 +66,7 @@
         <button onclick="changeMonth(1)" style="border:none;background:none;font-size:24px;">▶</button>
     </div>
     <div class="calendar" id="calendar"></div>
-    <div id="details-list" style="margin-top:20px; padding-bottom: 20px;"></div>
+    <div id="details-list" style="margin-top:20px;"></div>
 </div>
 
 <div id="page-input" class="page">
@@ -80,45 +80,33 @@
 
     <label class="field-label">日付</label>
     <input type="date" id="f-date">
-
     <label class="field-label">タイトル</label>
     <input type="text" id="f-title" placeholder="ガソリン代、給料など">
-
     <label class="field-label">ジャンル</label>
-    <select id="f-genre">
-        <option>食費</option><option>外食</option><option>趣味</option><option>旅行・観光</option>
-        <option>交通費</option><option>車</option><option>固定費</option><option>その他</option>
-    </select>
-
+    <select id="f-genre"></select>
     <label class="field-label">支払い方法</label>
     <select id="f-method"></select>
-
     <label class="field-label">金額</label>
     <input type="number" id="f-amount" placeholder="金額を入力" inputmode="numeric">
-
     <label class="field-label">メモ</label>
-    <textarea id="f-memo" rows="2" placeholder="詳細メモ（任意）"></textarea>
+    <textarea id="f-memo" rows="2" placeholder="メモ"></textarea>
 
-    <button class="btn-save" id="btn-save-main" onclick="saveEntry()">保存</button>
+    <button class="btn-save" onclick="saveEntry()">保存</button>
     <button class="btn-cancel" id="btn-cancel-edit" style="display:none;" onclick="showPage('home')">キャンセル</button>
 </div>
 
 <div id="page-settings" class="page">
     <h2 style="font-size:20px;">設定</h2>
-    <div class="box" style="background:white; padding:15px; border-radius:12px;">
+    <div class="box" style="background:white; padding:15px; border-radius:12px; margin-bottom:15px;">
         <label class="field-label">💳 支払い方法 (カンマ区切り)</label>
         <textarea id="s-methods" rows="2"></textarea>
-        <label class="field-label">カード(名:締:払)</label>
-        <input type="text" id="s-cards" placeholder="JCBW:99:10">
         <button class="btn-save" style="padding:10px; font-size:14px;" onclick="saveCustoms()">マスタ更新</button>
     </div>
     
-    <div class="box" style="margin-top:15px; background:white; padding:15px; border-radius:12px;">
+    <div class="box" style="background:white; padding:15px; border-radius:12px;">
         <h4>☁️ バックアップ・復元</h4>
-        <button onclick="copyToClipboard()" style="width:100%; padding:10px; margin-bottom:10px;">テキストコピー</button>
-        <button onclick="downloadBackup()" style="width:100%; padding:10px; margin-bottom:10px; background:var(--success); color:white; border:none; border-radius:8px;">JSON保存</button>
-        <textarea id="i-backup" placeholder="ここに貼り付け" rows="2"></textarea>
-        <button onclick="importFromText()" style="width:100%; padding:10px; background:var(--danger); color:white; border:none; border-radius:8px;">復元実行</button>
+        <textarea id="i-backup" placeholder="JSONデータを貼り付け" rows="5" style="font-size:10px;"></textarea>
+        <button onclick="importData()" style="width:100%; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px; font-weight:bold;">データを復元する</button>
     </div>
 </div>
 
@@ -130,19 +118,22 @@
 
 <script>
     let entries = [];
-    let settings = { cards: [], methods: ["現金", "Olive", "JCBW", "楽天", "PayPay", "manaca", "suica"], masterRoutines: [] };
+    let settings = { 
+        methods: ["現金", "Olive", "JCBW", "楽天", "PayPay", "manaca", "suica"], 
+        genres: ["食費", "外食", "趣味", "旅行・観光", "交通費", "車", "固定費", "その他"]
+    };
     let currentEntryType = 'out';
     let currentViewDate = new Date();
 
     function loadLocalStorage() {
-        const d = localStorage.getItem('kb_final_data'), s = localStorage.getItem('kb_final_sets');
+        const d = localStorage.getItem('kb_data'), s = localStorage.getItem('kb_sets');
         if(d) entries = JSON.parse(d);
         if(s) settings = JSON.parse(s);
     }
 
     function saveLocal() {
-        localStorage.setItem('kb_final_data', JSON.stringify(entries));
-        localStorage.setItem('kb_final_sets', JSON.stringify(settings));
+        localStorage.setItem('kb_data', JSON.stringify(entries));
+        localStorage.setItem('kb_sets', JSON.stringify(settings));
     }
 
     function renderCalendar() {
@@ -158,7 +149,6 @@
             const dSum = entries.filter(e => e.date === dStr).reduce((s, e) => s + Number(e.amount), 0);
             if(dSum < 0) totalOut += Math.abs(dSum);
             
-            // 色分けロジック (以前話した通りに強化)
             let lv = "";
             const absSum = Math.abs(dSum);
             if(absSum >= 20000) lv = "lv-huge";
@@ -166,9 +156,7 @@
             else if(absSum >= 5000) lv = "lv-mid";
             else if(absSum > 0) lv = "lv-low";
             
-            const dateObj = new Date(y, m, d);
-            const dayClass = dateObj.getDay() === 0 ? "sun" : (dateObj.getDay() === 6 ? "sat" : "");
-
+            const dayClass = (new Date(y, m, d)).getDay() === 0 ? "sun" : ((new Date(y, m, d)).getDay() === 6 ? "sat" : "");
             html += `<div class="day ${lv} ${dayClass}" onclick="showDayDetails('${dStr}')">
                         <span class="day-num">${d}</span>
                         <span class="day-sum">${dSum !== 0 ? absSum.toLocaleString() : ''}</span>
@@ -180,7 +168,7 @@
 
     function showDayDetails(date) {
         const list = entries.filter(e => e.date === date);
-        let html = `<h4 style="margin: 15px 0 10px 0;">${date} の内訳</h4>`;
+        let html = `<h4 style="margin: 10px 0;">${date}</h4>`;
         html += list.map(e => `
             <div class="entry-card">
                 <div class="entry-info">
@@ -191,7 +179,7 @@
                     <button class="btn-action" style="background:var(--main);" onclick="editEntry(${e.id})">編集</button>
                     <button class="btn-action" style="background:var(--danger);" onclick="deleteEntry(${e.id})">削除</button>
                 </div>
-            </div>`).join('') || "<p>データなし</p>";
+            </div>`).join('') || "<p>なし</p>";
         document.getElementById('details-list').innerHTML = html;
         window.scrollTo(0, document.body.scrollHeight);
     }
@@ -200,9 +188,8 @@
         const id = document.getElementById('f-id').value;
         const amt = parseInt(document.getElementById('f-amount').value);
         if(!amt) return;
-
         const data = {
-            id: id ? parseInt(id) : Date.now(),
+            id: id ? parseFloat(id) : Date.now(),
             date: document.getElementById('f-date').value,
             title: document.getElementById('f-title').value || "無題",
             genre: document.getElementById('f-genre').value,
@@ -210,20 +197,16 @@
             amount: currentEntryType === 'out' ? -Math.abs(amt) : Math.abs(amt),
             memo: document.getElementById('f-memo').value
         };
-
-        if(id) entries = entries.map(e => e.id === data.id ? data : e);
+        if(id) entries = entries.map(e => e.id == id ? data : e);
         else entries.push(data);
-
-        saveLocal();
-        resetInput();
-        showPage('home');
+        saveLocal(); resetInput(); showPage('home');
     }
 
     function editEntry(id) {
-        const e = entries.find(x => x.id === id);
+        const e = entries.find(x => x.id == id);
         if(!e) return;
         showPage('input');
-        document.getElementById('input-title').textContent = "データ編集";
+        document.getElementById('input-title').textContent = "編集";
         document.getElementById('f-id').value = e.id;
         document.getElementById('f-date').value = e.date;
         document.getElementById('f-title').value = e.title;
@@ -235,7 +218,7 @@
         document.getElementById('btn-cancel-edit').style.display = "block";
     }
 
-    function deleteEntry(id) { if(confirm("削除しますか？")) { entries = entries.filter(e => e.id !== id); saveLocal(); renderCalendar(); document.getElementById('details-list').innerHTML = ""; } }
+    function deleteEntry(id) { if(confirm("削除？")) { entries = entries.filter(e => e.id != id); saveLocal(); renderCalendar(); document.getElementById('details-list').innerHTML = ""; } }
 
     function resetInput() {
         document.getElementById('f-id').value = "";
@@ -254,32 +237,38 @@
     }
 
     function showPage(p) {
-        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('page-' + p).classList.add('active');
         document.getElementById('nav-' + p).classList.add('active');
         if(p === 'home') renderCalendar();
-        if(p === 'settings' || p === 'input') renderSettings();
-        if(p === 'input' && !document.getElementById('f-id').value) resetInput();
+        if(p === 'input' || p === 'settings') renderSettings();
     }
 
     function renderSettings() {
         document.getElementById('s-methods').value = settings.methods.join(', ');
         document.getElementById('f-method').innerHTML = settings.methods.map(m => `<option>${m}</option>`).join('');
+        document.getElementById('f-genre').innerHTML = settings.genres.map(g => `<option>${g}</option>`).join('');
     }
 
     function saveCustoms() {
         settings.methods = document.getElementById('s-methods').value.split(',').map(s => s.trim()).filter(s => s);
-        saveLocal(); renderSettings(); alert("更新完了");
+        saveLocal(); alert("OK");
+    }
+
+    function importData() {
+        try {
+            const raw = document.getElementById('i-backup').value;
+            const data = JSON.parse(raw);
+            if(data.entries) entries = data.entries;
+            if(data.settings) settings = data.settings;
+            saveLocal();
+            alert("復元完了");
+            location.reload();
+        } catch(e) { alert("失敗"); }
     }
 
     function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
-    function copyToClipboard() { navigator.clipboard.writeText(JSON.stringify({entries, settings})).then(() => alert("コピー完了")); }
-    function downloadBackup() {
-        const blob = new Blob([JSON.stringify({entries, settings})], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kakeibo.json'; a.click();
-    }
-    function importFromText() { try { const d = JSON.parse(document.getElementById('i-backup').value); if(d.entries) { entries = d.entries; settings = d.settings; saveLocal(); location.reload(); } } catch(e) { alert("エラー"); } }
 
     loadLocalStorage();
     showPage('home');
