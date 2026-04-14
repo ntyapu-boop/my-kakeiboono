@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Hybrid</title>
+    <title>家計簿 Pro+ Robust</title>
     <style>
         :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; --dark: #333; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -69,21 +69,17 @@
     
     <div class="box">
         <h4>☁️ バックアップ・復元</h4>
-        <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">方法1：テキスト文字列</p>
         <button onclick="copyToClipboard()" class="btn-sm" style="background:var(--sub); width:100%; margin-bottom:10px;">現在のデータをテキストコピー</button>
         <textarea id="i-backup" placeholder="バックアップ文字列を貼り付け" rows="2"></textarea>
         <button onclick="importFromText()" class="btn-sm" style="background:var(--danger); width:100%; margin-bottom:15px;">テキストから復元</button>
-        
         <hr style="border:none; border-top:1px solid #eee; margin-bottom:15px;">
-        
-        <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">方法2：JSONファイル</p>
-        <button onclick="downloadBackup()" class="btn-sm" style="background:var(--success); width:100%; margin-bottom:10px;">ファイルとして保存</button>
+        <button onclick="downloadBackup()" class="btn-sm" style="background:var(--success); width:100%; margin-bottom:10px;">JSONとして保存</button>
         <input type="file" id="file-input" style="display:none;" onchange="importFromFile(event)">
-        <button onclick="document.getElementById('file-input').click()" class="btn-sm" style="background:var(--main); width:100%;">ファイルから復元</button>
+        <button onclick="document.getElementById('file-input').click()" class="btn-sm" style="background:var(--main); width:100%;">JSONから復元</button>
     </div>
 
     <div class="box">
-        <h4>🔄 固定費マスタ</h4>
+        <h4>🔄 固定費マスタ (年間対応)</h4>
         <div id="routine-list"></div>
         <div style="background:#eef7ff; padding:12px; border-radius:10px; margin-top:10px;">
             <input type="text" id="r-title" placeholder="項目名">
@@ -126,9 +122,18 @@
 
 <script>
     let entries = [];
-    try { entries = JSON.parse(localStorage.getItem('kb_final_data')) || []; } catch(e) { entries = []; }
     let settings = { cards: [], methods: ["現金", "JCBW", "リクルート", "Olive"], masterRoutines: [] };
-    try { const s = JSON.parse(localStorage.getItem('kb_final_sets')); if(s) settings = s; } catch(e) {}
+
+    function loadLocalStorage() {
+        try {
+            const d = localStorage.getItem('kb_final_data');
+            const s = localStorage.getItem('kb_final_sets');
+            if(d) entries = JSON.parse(d);
+            if(s) settings = JSON.parse(s);
+            // 必須プロパティの補完
+            if(!settings.masterRoutines) settings.masterRoutines = [];
+        } catch(e) { console.error("Load Error", e); }
+    }
 
     let currentViewDate = new Date();
 
@@ -138,6 +143,7 @@
     }
 
     function processRoutines() {
+        if(!settings.masterRoutines) return;
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
         const lastDay = new Date(y, m + 1, 0).getDate();
         let updated = false;
@@ -165,26 +171,32 @@
     }
 
     function renderCalendar() {
-        processRoutines();
-        const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
-        document.getElementById('header-month').textContent = `${y}年 ${m + 1}月`;
-        const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
-        let html = '', totalOut = 0;
-        for(let i=0; i<first; i++) html += '<div class="day" style="background:#eee"></div>';
-        for(let d=1; d<=last; d++) {
-            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const dEntries = entries.filter(e => e.date === dStr);
-            const dSum = dEntries.reduce((s, e) => s + e.amount, 0);
-            if(dSum < 0) totalOut += Math.abs(dSum);
-            let labels = "";
-            settings.cards.forEach(c => {
-                if((c.close === 99 && d === last) || c.close === d) labels += `<span class="day-label" style="color:red">●締:${c.name}</span>`;
-                if(c.pay === d) labels += `<span class="day-label" style="color:blue">●落:${c.name}</span>`;
-            });
-            html += `<div class="day" onclick="showDayDetails('${dStr}')"><div><span>${d}</span>${labels}</div><span class="day-sum">${dSum !== 0 ? Math.abs(dSum).toLocaleString() : ''}</span></div>`;
+        try {
+            processRoutines();
+            const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
+            document.getElementById('header-month').textContent = `${y}年 ${m + 1}月`;
+            const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
+            let html = '', totalOut = 0;
+            for(let i=0; i<first; i++) html += '<div class="day" style="background:#eee"></div>';
+            for(let d=1; d<=last; d++) {
+                const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dEntries = entries.filter(e => e.date === dStr);
+                const dSum = dEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                if(dSum < 0) totalOut += Math.abs(dSum);
+                let labels = "";
+                if(settings.cards) {
+                    settings.cards.forEach(c => {
+                        if((c.close === 99 && d === last) || c.close === d) labels += `<span class="day-label" style="color:red">●締:${c.name}</span>`;
+                        if(c.pay === d) labels += `<span class="day-label" style="color:blue">●落:${c.name}</span>`;
+                    });
+                }
+                html += `<div class="day" onclick="showDayDetails('${dStr}')"><div><span>${d}</span>${labels}</div><span class="day-sum">${dSum !== 0 ? Math.abs(dSum).toLocaleString() : ''}</span></div>`;
+            }
+            document.getElementById('calendar').innerHTML = html;
+            document.getElementById('header-total').textContent = totalOut.toLocaleString();
+        } catch(e) {
+            document.getElementById('calendar').innerHTML = "<p style='padding:10px; color:red;'>データ復元中またはエラー。設定からバックアップを再試行してください。</p>";
         }
-        document.getElementById('calendar').innerHTML = html;
-        document.getElementById('header-total').textContent = totalOut.toLocaleString();
     }
 
     function showDayDetails(date) {
@@ -202,23 +214,25 @@
     function renderReport() {
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
         let billHtml = "";
-        settings.cards.forEach(card => {
-            let endDate = (card.close === 99) ? new Date(y, m, 0) : new Date(y, m - 1, card.close);
-            let startDate = new Date(endDate); startDate.setMonth(startDate.getMonth() - 1); startDate.setDate(startDate.getDate() + 1);
-            const total = entries.reduce((s, e) => {
-                const ed = new Date(e.date);
-                return (e.method === card.name && e.amount < 0 && ed >= startDate && ed <= endDate) ? s + Math.abs(e.amount) : s;
-            }, 0);
-            billHtml += `<div class="list-row"><span>${card.name} (${m+1}/${card.pay}落)</span><b>${total.toLocaleString()} 円</b></div>`;
-        });
+        if(settings.cards) {
+            settings.cards.forEach(card => {
+                let endDate = (card.close === 99) ? new Date(y, m, 0) : new Date(y, m - 1, card.close);
+                let startDate = new Date(endDate); startDate.setMonth(startDate.getMonth() - 1); startDate.setDate(startDate.getDate() + 1);
+                const total = entries.reduce((s, e) => {
+                    const ed = new Date(e.date);
+                    return (e.method === card.name && e.amount < 0 && ed >= startDate && ed <= endDate) ? s + Math.abs(e.amount) : s;
+                }, 0);
+                billHtml += `<div class="list-row"><span>${card.name} (${m+1}/${card.pay}落)</span><b>${total.toLocaleString()} 円</b></div>`;
+            });
+        }
         document.getElementById('card-bill-summary').innerHTML = billHtml || "設定なし";
     }
 
     function renderSettings() {
-        document.getElementById('s-cards').value = settings.cards.map(c => `${c.name}:${c.close}:${c.pay}`).join(', ');
-        document.getElementById('s-methods').value = settings.methods.join(', ');
-        document.getElementById('r-method').innerHTML = settings.methods.map(m => `<option>${m}</option>`).join('');
-        document.getElementById('routine-list').innerHTML = settings.masterRoutines.map(r => `
+        document.getElementById('s-cards').value = (settings.cards || []).map(c => `${c.name}:${c.close}:${c.pay}`).join(', ');
+        document.getElementById('s-methods').value = (settings.methods || []).join(', ');
+        document.getElementById('r-method').innerHTML = (settings.methods || []).map(m => `<option>${m}</option>`).join('');
+        document.getElementById('routine-list').innerHTML = (settings.masterRoutines || []).map(r => `
             <div style="background:#f9f9f9; padding:8px; border-radius:8px; margin-bottom:5px; font-size:12px;">
                 <div style="display:flex; justify-content:space-between;"><b>${r.title}</b> <span>${r.amount.toLocaleString()}円</span></div>
                 <div style="text-align:right; margin-top:5px;">
@@ -227,10 +241,9 @@
             </div>`).join('') || "未登録";
     }
 
-    // --- バックアップ処理 ---
     function copyToClipboard() {
         const text = JSON.stringify({ entries, settings });
-        navigator.clipboard.writeText(text).then(() => alert("現在のデータをテキストコピーしました"));
+        navigator.clipboard.writeText(text).then(() => alert("コピーしました！"));
     }
 
     function importFromText() {
@@ -239,17 +252,18 @@
         try {
             const d = JSON.parse(text);
             if(d.entries && d.settings) {
-                entries = d.entries; settings = d.settings; saveLocal(); alert("復元成功！"); location.reload();
+                entries = d.entries; settings = d.settings;
+                if(!settings.masterRoutines) settings.masterRoutines = [];
+                saveLocal(); alert("復元成功！"); location.reload();
             }
-        } catch(e) { alert("形式が正しくありません"); }
+        } catch(e) { alert("形式が違います。余計な文字が入っていないか確認してください。"); }
     }
 
     function downloadBackup() {
         const data = JSON.stringify({ entries, settings }, null, 2);
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `kakeibo_backup.json`; a.click();
+        const a = document.createElement('a'); a.href = url; a.download = `kakeibo_backup.json`; a.click();
     }
 
     function importFromFile(event) {
@@ -258,11 +272,10 @@
             try {
                 const d = JSON.parse(e.target.result);
                 if(d.entries) { entries = d.entries; settings = d.settings; saveLocal(); alert("復元完了！"); location.reload(); }
-            } catch(err) { alert("ファイル復元に失敗しました"); }
+            } catch(err) { alert("復元失敗"); }
         };
         reader.readAsText(event.target.files[0]);
     }
-    // -----------------------
 
     function toggleCycleOptions() {
         const c = document.getElementById('r-cycle').value;
@@ -304,6 +317,9 @@
     function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
     document.querySelectorAll('.wd-opt').forEach(opt => opt.onclick = () => opt.classList.toggle('active'));
     document.getElementById('f-date').valueAsDate = new Date();
+    
+    // 初期起動
+    loadLocalStorage();
     showPage('home');
 </script>
 </body>
