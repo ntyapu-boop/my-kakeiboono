@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>家計簿アプリ Pro - Full Spec</title>
+    <title>家計簿アプリ Pro - Fixed Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -183,7 +183,7 @@
 </nav>
 
 <script>
-    const STORAGE_KEY = 'kakeibo_v10_final';
+    const STORAGE_KEY = 'kakeibo_v11_fixed';
     let appData = { entries: [], settings: { budget: 200000, methods: ["現金", "PayPay", "JCBW"], genres: ["食費", "交通費", "趣味", "固定費"], cards: [], fixed: [], templates: [] } };
     let viewDate = new Date();
     let entryType = 'expense';
@@ -197,14 +197,14 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        if(event) event.currentTarget.classList.add('active');
         if(pageId === 'calendar') { checkAndApplyFixedCosts(); renderCalendar(); }
         if(pageId === 'input') setupInput();
         if(pageId === 'analysis') renderAnalysis();
         if(pageId === 'settings') renderSettings();
     }
 
-    // --- カレンダー描画 (色分け) ---
+    // --- カレンダー描画 ---
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
         const y = viewDate.getFullYear(), m = viewDate.getMonth();
@@ -250,7 +250,7 @@
         document.getElementById('dayDetails').innerHTML = items.length ? h : "記録なし";
     }
 
-    // --- 分析機能 (復活版) ---
+    // --- 分析機能 ---
     function renderAnalysis() {
         const y = viewDate.getFullYear(), m = viewDate.getMonth();
         const yearEntries = appData.entries.filter(e => new Date(e.date).getFullYear() === y && e.amount < 0);
@@ -291,7 +291,7 @@
         target.innerHTML = h || "データなし";
     }
 
-    // --- 設定画面 (一本化) ---
+    // --- 設定画面 (修正済) ---
     function renderSettings() {
         document.getElementById('setBudget').value = appData.settings.budget;
         document.getElementById('setMethods').value = appData.settings.methods.join(',');
@@ -319,17 +319,17 @@
 
     function renderList(id, data, htmlFn) { document.getElementById(id).innerHTML = data.map((item, i) => htmlFn(item, i)).join(''); }
 
-    // --- 保存・更新アクション ---
+    // --- 保存・更新アクション (ロジック修正) ---
     function addTemplate() {
         const idx = parseInt(document.getElementById('tIdx').value);
         const obj = { name: document.getElementById('tName').value, title: document.getElementById('tTitle').value, amount: Number(document.getElementById('tAmount').value), genre: document.getElementById('tGenre').value, method: document.getElementById('tMethod').value };
-        if(idx === -1) appData.settings.templates.push(obj); else appData.settings.templates[idx] = obj;
+        if (idx === -1) appData.settings.templates.push(obj); else appData.settings.templates[idx] = obj;
         saveData(); renderSettings(); clearForm(['tIdx','tName','tTitle','tAmount']);
     }
     function addCard() {
         const idx = parseInt(document.getElementById('cIdx').value);
         const obj = { name: document.getElementById('cName').value, close: parseInt(document.getElementById('cClose').value), pay: parseInt(document.getElementById('cPay').value) };
-        if(idx === -1) appData.settings.cards.push(obj); else appData.settings.cards[idx] = obj;
+        if (idx === -1) appData.settings.cards.push(obj); else appData.settings.cards[idx] = obj;
         saveData(); renderSettings(); clearForm(['cIdx','cName','cClose','cPay']);
     }
     function addFixed() {
@@ -339,7 +339,7 @@
             val = Array.from(document.querySelectorAll('#fixVal_week .wd-btn.active')).map(b => b.innerText).join(',');
         }
         const obj = { title: document.getElementById('fixTitle').value, amount: Number(document.getElementById('fixAmount').value), type: document.getElementById('fixType').value, val: val };
-        if(idx === -1) appData.settings.fixed.push(obj); else appData.settings.fixed[idx] = obj;
+        if (idx === -1) appData.settings.fixed.push(obj); else appData.settings.fixed[idx] = obj;
         saveData(); renderSettings(); clearForm(['fixIdx','fixTitle','fixAmount','fixVal']);
         document.querySelectorAll('.wd-btn').forEach(b => b.classList.remove('active'));
     }
@@ -364,7 +364,7 @@
         } else { document.getElementById('fixVal').value = f.val; }
     }
 
-    // --- その他ロジック ---
+    // --- その他 ---
     function toggleFixValUI() {
         const isWeekly = document.getElementById('fixType').value === 'weekly';
         document.getElementById('fixVal_text').style.display = isWeekly ? 'none' : 'block';
@@ -390,7 +390,6 @@
         });
         if(changed) saveData();
     }
-
     function setupInput() {
         document.getElementById('fGenre').innerHTML = appData.settings.genres.map(x => `<option>${x}</option>`).join('');
         document.getElementById('fMethod').innerHTML = appData.settings.methods.map(x => `<option>${x}</option>`).join('');
